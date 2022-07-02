@@ -1,0 +1,36 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<div style="border: 5px solid #555; text-align: center;">
+    <img src="{{ listing.img_URL }}" alt="image">
+</div>
+<h2 >{{ listing.name }}</h2>
+<p>{{ listing.discription }}</p><br>
+<h2>Details</h2>
+<ul>
+    <li>Created by {{ listing.user }}</li>
+    <li>Created on {{ listing.datetime_created }}</li>
+</ul>
+<form action="">
+    <h2>Starting bid is ${{ listing.starting_bid }}</h2>
+    {% if bids|length != 0 %}
+        <h4>Current highest bid is ${{ listing.starting_bid }}</h4>
+    {% endif %}
+    <h6 style="color: #7f7f7f">{{ bids|length }} bid(s) so far</h6>
+    <input class="form-control" type="number" placeholder="Amount">
+    <input type="submit" class="btn btn-primary" value="Bid">
+</form>
+<br>
+<br>
+<h2>Comments</h2>
+{% for comment in comments %}
+    <h6>{{ comment.name }}  </h6><p style="color:#7f7f7f">{{ comment.datetime_created }}</p>
+    <p>{{ comment.text }}/p>
+{% endfor %}
+<hr>
+<form action="#" method="post">
+    {% csrf_token %}
+    <input class="form-control" placeholder="Post a new comment">
+    <input type="submit" class="btn btn-primary" value="Post" placeholder="Create a new comment">
+</form>
+{% endblock %}

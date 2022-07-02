@@ -1,0 +1,22 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>Active Listings</h2>
+    <div class="row">
+    {% for listing in listings %}    
+        <div class="card" style="width: 30rem;">
+            <img class="card-img-top" src="{{ listing.img_URL }}" alt="Card image cap">
+            <div class="card-body">
+                <h5 class="card-title">{{ listing.name }}</h5>
+                <p class="card-text">{{ listing.discription }}</p>
+                <br>
+                <p style="color: #7f7f7f">Created at {{ listing.datetime_created }}</p>
+                <a href="{% url 'listing' listing.id %}" class="btn btn-primary">View this listing</a>
+            </div>
+        </div>
+    {% empty %}
+        <br> 
+        <h4>No active listings right now. Click <a href="{% url 'index' %}">here </a>to refresh this page.</h4>
+    {% endfor %}
+    </div>
+{% endblock %}
