@@ -13,26 +13,26 @@ class Category(models.Model):
         return f"{self.name}"
 
 class Listing(models.Model):
-    name = models.CharField(max_length=32)
-    discription = models.TextField(max_length=100)
+    name = models.CharField(max_length=100)
+    discription = models.TextField()
     starting_bid = models.IntegerField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="listings")
     img_URL = models.TextField(blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="listings")
-    status = models.BooleanField(default=False)
+    status = models.BooleanField(default=True)
     datetime_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.name}: {self.starting_bid} dollars"
+        return f"{self.name}: ${self.starting_bid}"
 
 class Bid(models.Model):
-    price = models.IntegerField()
+    amount = models.IntegerField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bids")
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="bids")
     status = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.user} bids an amount of {self.price} dollars on {self.listing}."
+        return f"{self.amount}"
 
 
 class Comment(models.Model):
@@ -42,4 +42,4 @@ class Comment(models.Model):
     datetime_created = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"{self.user} commented '{self.comment_text}' on {self.listing}."
+        return f"{self.user} commented '{self.text}' on {self.listing}."

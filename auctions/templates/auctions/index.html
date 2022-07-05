@@ -1,6 +1,6 @@
 {% extends "auctions/layout.html" %}
 
-{% block body %}
+{% block body %}  
     <h2>Active Listings</h2>
     <div class="row">
     {% for listing in listings %}    
@@ -8,7 +8,7 @@
             <img class="card-img-top" src="{{ listing.img_URL }}" alt="Card image cap">
             <div class="card-body">
                 <h5 class="card-title">{{ listing.name }}</h5>
-                <p class="card-text">{{ listing.discription }}</p>
+                <h6>Bids start at ${{ listing.starting_bid }}</h6>
                 <br>
                 <p style="color: #7f7f7f">Created at {{ listing.datetime_created }}</p>
                 <a href="{% url 'listing' listing.id %}" class="btn btn-primary">View this listing</a>

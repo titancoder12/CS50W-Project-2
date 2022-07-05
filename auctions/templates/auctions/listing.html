@@ -1,36 +1,63 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
+{% if alert %}
+    <div class="alert alert-{{ alert_type }} alert-dismissible fade show" role="alert">
+        <strong>{{ alert_message }}</strong> {{ alert_submessage|safe }} 
+    </div>
+    <br>
+{% endif %}
+{% if highest_bid_object.user == user.id %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>You won this bid!</strong>
+    </div>
+    <br>
+{% endif %} 
 <div style="border: 5px solid #555; text-align: center;">
     <img src="{{ listing.img_URL }}" alt="image">
 </div>
-<h2 >{{ listing.name }}</h2>
+<h1>{{ listing.name }}</h1>
+<br>
+<h2>Discription</h2>
 <p>{{ listing.discription }}</p><br>
 <h2>Details</h2>
 <ul>
     <li>Created by {{ listing.user }}</li>
     <li>Created on {{ listing.datetime_created }}</li>
+    <li>Category is <a href="{% url 'category' listing.category.id %}">{{ listing.category }}</a></li>
 </ul>
-<form action="">
+<form action="{% url 'listing' listing.id %}" method="post">
     <h2>Starting bid is ${{ listing.starting_bid }}</h2>
-    {% if bids|length != 0 %}
-        <h4>Current highest bid is ${{ listing.starting_bid }}</h4>
+    {% if num_of_bids > 0 %}
+        <h4>Current highest bid is ${{ highest_bid }}</h4>
     {% endif %}
-    <h6 style="color: #7f7f7f">{{ bids|length }} bid(s) so far</h6>
-    <input class="form-control" type="number" placeholder="Amount">
-    <input type="submit" class="btn btn-primary" value="Bid">
+    <h6 style="color: #7f7f7f">{{ num_of_bids }} bid(s) so far</h6>
+    {% csrf_token %}
+    <input class="form-control" autocomplete="off" name="amount" type="number" placeholder="Amount">
+    <input type="hidden" name="listing" value="{{ listing.id }}">
+    <input type="submit" name="bid" class="btn btn-primary" value="Bid">    
 </form>
+{% if num_of_bids > 0 %}
+    {% if listing.user.id == user.id %}  
+        <form action="{% url 'listing' listing.id %}" method="POST">
+            {% csrf_token %}  
+            <input class="btn btn-danger" name="closelisting" type="submit" value="Close Listing">
+        </form>
+    {% endif %}
+{% endif %}
 <br>
 <br>
 <h2>Comments</h2>
-{% for comment in comments %}
-    <h6>{{ comment.name }}  </h6><p style="color:#7f7f7f">{{ comment.datetime_created }}</p>
-    <p>{{ comment.text }}/p>
-{% endfor %}
 <hr>
-<form action="#" method="post">
+{% for comment in comments %}
+    <h4>{{ comment.user }} said</h4>
+    <p>{{ comment.text }}</p>
+    <p style="color: #7f7f7f">Created at {{ comment.datetime_created }}</p>
+    <hr>
+{% endfor %}
+<form action="{% url 'listing' listing.id %}" method="post">
     {% csrf_token %}
-    <input class="form-control" placeholder="Post a new comment">
-    <input type="submit" class="btn btn-primary" value="Post" placeholder="Create a new comment">
+    <input class="form-control" autocomplete="off" name="comment_text" placeholder="Post a new comment">
+    <input type="submit" name="postcomment" class="btn btn-primary" value="Post" placeholder="Create a new comment">
 </form>
 {% endblock %}

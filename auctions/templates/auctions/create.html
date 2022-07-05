@@ -1,9 +1,15 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
+    {% if alert %}
+    <div class="alert alert-{{ alert_type }} alert-dismissible fade show" role="alert">
+        <strong>{{ alert_message }}</strong> {{ alert_submessage }} 
+    </div>
+    <br>
+    {% endif %} 
     <form action="{% url 'create' %}" method="post">
         {% csrf_token %}
-        <input type="text" name="name" class="form-control" placeholder="Listing Title">
+        <input autocomplete="off" type="text" name="name" class="form-control" placeholder="Listing Title">
         <br>
         <textarea rows="10" cols="30" type="text" name="discription" class="form-control" placeholder="Discription"></textarea>
         <br>
