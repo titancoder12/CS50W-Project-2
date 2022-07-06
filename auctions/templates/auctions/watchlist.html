@@ -2,4 +2,9 @@
 
 {% block body %}  
     <h2>My Watchlist</h2>
+    <br>
+    {% for watchlistitem in watchlist %}
+        <a href="{% url 'listing' watchlistitem.listing.id %}">{{ watchlistitem.listing.name }}</a>
+        <br>
+    {% endfor %}
 {% endblock %}

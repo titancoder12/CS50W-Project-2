@@ -43,3 +43,8 @@ class Comment(models.Model):
     
     def __str__(self):
         return f"{self.user} commented '{self.text}' on {self.listing}."
+
+class Watchlist(models.Model):
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="watchlistitems")
+    user =  models.ForeignKey(User, on_delete=models.PROTECT, related_name="watchlistitems")
+    status = models.BooleanField(default=True)

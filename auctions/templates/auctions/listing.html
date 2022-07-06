@@ -5,18 +5,30 @@
     <div class="alert alert-{{ alert_type }} alert-dismissible fade show" role="alert">
         <strong>{{ alert_message }}</strong> {{ alert_submessage|safe }} 
     </div>
-    <br>
 {% endif %}
-{% if highest_bid_object.user == user.id %}
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <strong>You won this bid!</strong>
-    </div>
-    <br>
-{% endif %} 
+{% if listing.status == False %}
+    {% if request.user.id == highest_bid_object.user.id %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>You won this bid!</strong>
+        </div>
+    {% endif %}
+{% endif %}
 <div style="border: 5px solid #555; text-align: center;">
     <img src="{{ listing.img_URL }}" alt="image">
 </div>
 <h1>{{ listing.name }}</h1>
+{% if inwatchlist != True %}
+    <form action="{% url 'listing' listing.id %}" method="POST">
+        {% csrf_token %}  
+        <input class="btn btn-secondary" name="addtowatchlist" type="submit" value="Add to watchlist">
+    </form>
+{% endif %}
+{% if inwatchlist %}
+    <form action="{% url 'listing' listing.id %}" method="POST">
+        {% csrf_token %}  
+        <input class="btn btn-secondary" name="removefromwatchlist" type="submit" value="Remove from watchlist">
+    </form>
+{% endif %}
 <br>
 <h2>Discription</h2>
 <p>{{ listing.discription }}</p><br>
@@ -35,14 +47,16 @@
     {% csrf_token %}
     <input class="form-control" autocomplete="off" name="amount" type="number" placeholder="Amount">
     <input type="hidden" name="listing" value="{{ listing.id }}">
-    <input type="submit" name="bid" class="btn btn-primary" value="Bid">    
+    <input type="submit" name="bid" {% if listing.status == False %}disabled{% endif %} class="btn btn-primary" value="Bid">    
 </form>
-{% if num_of_bids > 0 %}
-    {% if listing.user.id == user.id %}  
-        <form action="{% url 'listing' listing.id %}" method="POST">
-            {% csrf_token %}  
-            <input class="btn btn-danger" name="closelisting" type="submit" value="Close Listing">
-        </form>
+{% if listing.status != False %}
+    {% if num_of_bids > 0 %}
+        {% if listing.user.id == user.id %}  
+            <form action="{% url 'listing' listing.id %}" method="POST">
+                {% csrf_token %}  
+                <input class="btn btn-danger" name="closelisting" type="submit" value="Close Listing">
+            </form>
+        {% endif %}
     {% endif %}
 {% endif %}
 <br>

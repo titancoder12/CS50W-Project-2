@@ -6,11 +6,11 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 
-from .models import User, Bid, Category, Listing, Comment
+from .models import User, Bid, Category, Listing, Comment, Watchlist
 
 def index(request):
     return render(request, "auctions/index.html", {
-        "listings": Listing.objects.all(status=True)
+        "listings": Listing.objects.filter(status=True)
     })
 
 
@@ -92,14 +92,13 @@ def create(request):
         else:
             request_category = Category.objects.get(name=request.POST.get("category"))
         request_category = request_category.id
-        print(request_category)
         request_img_URL = request.POST.get("img_URL")
         if ("https://" or "http://") not in request_img_URL:
             request_img_URL = "https://thumbs.dreamstime.com/b/no-image-available-icon-photo-camera-flat-vector-illustration-132483141.jpg"
         request_user = request.user.id
         
         #Listing(name=request_name, discription=request_discription, starting_bid=request_starting_bid, category=request_category, img_URL=request_img_URL, user=request_user, status=False)
-        listing = Listing(name=request_name, discription=request_discription, starting_bid=int(request_starting_bid), category=Category(request_category), img_URL=request_img_URL, user=User(request_user), status=False)
+        listing = Listing(name=request_name, discription=request_discription, starting_bid=int(request_starting_bid), category=Category(request_category), img_URL=request_img_URL, user=User(request_user), status=True)
         listing.save()
         return HttpResponseRedirect(reverse(index))
     else:
@@ -115,14 +114,34 @@ def listing(request, id):
     num_of_bids = int(bids.count())
     highest_bid = bids.first()
     amount = str(request.POST.get("amount"))
+    if highest_bid != None:
+        highest_bid_amount = highest_bid.amount
+    else:
+        highest_bid_amount = 0
+    
+    if Watchlist.objects.filter(listing=Listing(id), user=User(request.user.id)) != None:
+        inwatchlist = False
+    else:
+        inwatchlist = True
+
     if request.method == "POST":
-
+        comments = listing.comments.all()
         if request.POST.get("bid"):
-
+            if listing.status == False:
+                return render(request, "auctions/listing.html", {
+                "comments": comments,
+                "listing": listing,
+                "highest_bid": highest_bid_amount,
+                "num_of_bids": num_of_bids,
+                "alert": True,
+                "alert_type": "danger",
+                "alert_message": "This listing is closed.",
+                })
             if amount == None or amount == "":
                 return render(request, "auctions/listing.html", {
                 "listing": listing,
-                "highest_bid": int(highest_bid.amount),
+                "comments": comments,
+                "highest_bid": highest_bid_amount,
                 "num_of_bids": num_of_bids,
                 "alert": True,
                 "alert_type": "warning",
@@ -130,28 +149,30 @@ def listing(request, id):
                 })
             elif int(amount) <= int(listing.starting_bid):
                 return render(request, "auctions/listing.html", {
+                "comments": comments,
                 "listing": listing,
-                "highest_bid": int(highest_bid.amount),
+                "highest_bid": highest_bid_amount,
                 "num_of_bids": num_of_bids,
                 "alert": True,
                 "alert_type": "warning",
                 "alert_message": "Your bid is too small!",
                 "alert_submessage": f"Your bid must be more than the starting bid."
                 })
-            elif int(highest_bid.amount) is not None:
-                if int(amount) <= int(highest_bid.amount):
-                    return render(request, "auctions/listing.html", {
+            if int(amount) <= highest_bid_amount:
+                return render(request, "auctions/listing.html", {
+                    "comments": comments,
                     "listing": listing,
-                    "highest_bid": int(highest_bid.amount),
+                    "highest_bid": highest_bid_amount,
                     "num_of_bids": num_of_bids,
                     "alert": True,
                     "alert_type": "warning",
                     "alert_message": "Your bid is too small!",
                     "alert_submessage": f"Your bid must be more than the current highest bid."
-                    })
+                })
+            
             bid = Bid(amount=amount, user=User(user_id), listing=Listing(listing_id))
             bid.save()
-            comments = listing.comments.all()
+            listing = Listing.objects.get(id=id)
             return render(request, "auctions/listing.html", {
                 "listing": listing,
                 "highest_bid": amount,
@@ -167,11 +188,10 @@ def listing(request, id):
             if (comment_text is not "") or (comment_text is not None):
                 comment = Comment(user=User(user_id), listing=Listing(id), text=comment_text)
                 comment.save()
-        
             comments = listing.comments.all()
             return render(request, "auctions/listing.html", {
                 "listing": listing,
-                "highest_bid": int(highest_bid.amount),
+                "highest_bid": highest_bid_amount,
                 "num_of_bids": num_of_bids,
                 "comments": comments,
                 "alert": True,
@@ -183,10 +203,11 @@ def listing(request, id):
             listing.save()
             highest_bid.status = True
             highest_bid.save()
+            listing = Listing.objects.get(id=id)
             comments = listing.comments.all()
             return render(request, "auctions/listing.html", {
                 "listing": listing,
-                "highest_bid": int(highest_bid.amount),
+                "highest_bid": highest_bid_amount,
                 "num_of_bids": num_of_bids,
                 "comments": comments,
                 "alert": True,
@@ -194,6 +215,37 @@ def listing(request, id):
                 "alert_message": "Closed listing.",
                 "highest_bid_object": highest_bid
             })
+        else:
+            if request.POST.get("addtowatchlist"):
+                watchlistitem = Watchlist.objects.filter(listing=Listing(id), user=User(request.user.id))
+                if str(watchlistitem) == "<QuerySet []>":
+                    watchlistitem = Watchlist(listing=Listing(id), user=User(request.user.id))
+                    watchlistitem.save()
+                    inwatchlist = True
+                else:
+                    watchlistitem = Watchlist.objects.get(listing=Listing(id), user=User(request.user.id))
+                    watchlistitem.status = True
+                    watchlistitem.save()
+                alert_message = "Added listing to watchlist"
+            elif request.POST.get("removefromwatchlist"):
+                watchlistitem = Watchlist.objects.get(listing=Listing(id), user=User(request.user.id))
+                watchlistitem.status = False
+                watchlistitem.save()
+                inwatchlist = False
+                alert_message = "Removed listing from watchlist."
+                
+            return render(request, "auctions/listing.html", {
+                "inwatchlist": inwatchlist,
+                "listing": listing,
+                "highest_bid": highest_bid_amount,
+                "num_of_bids": num_of_bids,
+                "comments": comments,
+                "alert": True,
+                "alert_type": "success",
+                "alert_message": alert_message,
+                "highest_bid_object": highest_bid
+            })
+            
         
     else:
         listing = Listing.objects.get(id=id)
@@ -201,22 +253,45 @@ def listing(request, id):
         #bids = listing.bids.order_by("-amount")
         #num_of_bids = int(bids.count())
         #highest_bid = bids.first()
-
+        if listing.status == False:
+            """if request.user.id == highest_bid.user.id:
+                return render(request, "auctions/listing.html", {
+                    "listing": listing,
+                    "highest_bid": highest_bid_amount,
+                    "num_of_bids": num_of_bids,
+                    "comments": comments,
+                    "alert": True,
+                    "alert_type": "success",
+                    "alert_message": "You won this bid!",
+                    "highest_bid_object": highest_bid
+                })"""
+            return render(request, "auctions/listing.html", {
+                "listing": listing,
+                "highest_bid": highest_bid_amount,
+                "num_of_bids": num_of_bids,
+                "comments": comments,
+                "alert": True,
+                "alert_type": "secondary",
+                "alert_message": "This listing is not active anymore",
+                "highest_bid_object": highest_bid
+            })
+            
         return render(request, "auctions/listing.html", {
             "listing": listing,
-            "highest_bid": int(highest_bid.amount),
+            "highest_bid": highest_bid_amount,
             "num_of_bids": num_of_bids,
             "comments": comments,
         })
 
 def watchlist(request):
-    return render(request, "auctions/watchlist.html")
+    watchlist = Watchlist.objects.all()
+    return render(request, "auctions/watchlist.html", {
+        "watchlist": watchlist
+    })
 
 def category(request, id):
     category = Category.objects.get(id=id)
-    print(category)
     listings = category.listings.all()
-    print(listings)
     return render(request, "auctions/category.html", {
         "category": category,
         "listings": listings
