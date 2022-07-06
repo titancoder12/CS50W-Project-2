@@ -119,11 +119,17 @@ def listing(request, id):
     else:
         highest_bid_amount = 0
     
-    if Watchlist.objects.filter(listing=Listing(id), user=User(request.user.id)) != None:
-        inwatchlist = False
+    watchlistitem = Watchlist.objects.filter(listing=Listing(id), user=User(request.user.id))
+    watchlistitemstatus = True
+    if str(watchlistitem) != "<QuerySet []>":
+        watchlistitem = Watchlist.objects.get(listing=Listing(id), user=User(request.user.id))
+        if watchlistitem.status == True:
+            watchlistitemstatus = True
+        else:
+            watchlistitemstatus = False
     else:
-        inwatchlist = True
-
+        watchlistitemstatus = False
+    
     if request.method == "POST":
         comments = listing.comments.all()
         if request.POST.get("bid"):
@@ -136,6 +142,7 @@ def listing(request, id):
                 "alert": True,
                 "alert_type": "danger",
                 "alert_message": "This listing is closed.",
+                "watchliststatus": watchlistitemstatus
                 })
             if amount == None or amount == "":
                 return render(request, "auctions/listing.html", {
@@ -146,8 +153,9 @@ def listing(request, id):
                 "alert": True,
                 "alert_type": "warning",
                 "alert_message": "Enter an amount to bid for this item.",
+                "watchliststatus": watchlistitemstatus
                 })
-            elif int(amount) <= int(listing.starting_bid):
+            elif int(amount) < int(listing.starting_bid):
                 return render(request, "auctions/listing.html", {
                 "comments": comments,
                 "listing": listing,
@@ -156,7 +164,8 @@ def listing(request, id):
                 "alert": True,
                 "alert_type": "warning",
                 "alert_message": "Your bid is too small!",
-                "alert_submessage": f"Your bid must be more than the starting bid."
+                "alert_submessage": f"Your bid must be the same or more than the starting bid.",
+                "watchliststatus": watchlistitemstatus
                 })
             if int(amount) <= highest_bid_amount:
                 return render(request, "auctions/listing.html", {
@@ -167,7 +176,8 @@ def listing(request, id):
                     "alert": True,
                     "alert_type": "warning",
                     "alert_message": "Your bid is too small!",
-                    "alert_submessage": f"Your bid must be more than the current highest bid."
+                    "alert_submessage": f"Your bid must be more than the current highest bid.",
+                    "watchliststatus": watchlistitemstatus
                 })
             
             bid = Bid(amount=amount, user=User(user_id), listing=Listing(listing_id))
@@ -181,7 +191,8 @@ def listing(request, id):
                 "alert": True,
                 "alert_type": "success",
                 "alert_message": "Bid created.",
-                "alert_submessage": f"You won't be able to find this in the 'active listings' section when it is closed. Add to <a href=\"{reverse(watchlist)}\">watchlist</a>?"
+                "alert_submessage": f"You won't be able to find this in the 'active listings' section when it is closed. Add to <a href=\"{reverse(watchlist)}\">watchlist</a>?",
+                "watchliststatus": watchlistitemstatus
             })
         elif request.POST.get("postcomment"):
             comment_text = str(request.POST.get("comment_text"))
@@ -197,6 +208,7 @@ def listing(request, id):
                 "alert": True,
                 "alert_type": "success",
                 "alert_message": "Comment created.",
+                "watchliststatus": watchlistitemstatus
             })
         elif request.POST.get("closelisting"):
             listing.status = False
@@ -213,7 +225,8 @@ def listing(request, id):
                 "alert": True,
                 "alert_type": "success",
                 "alert_message": "Closed listing.",
-                "highest_bid_object": highest_bid
+                "highest_bid_object": highest_bid,
+                "watchliststatus": watchlistitemstatus
             })
         else:
             if request.POST.get("addtowatchlist"):
@@ -221,30 +234,43 @@ def listing(request, id):
                 if str(watchlistitem) == "<QuerySet []>":
                     watchlistitem = Watchlist(listing=Listing(id), user=User(request.user.id))
                     watchlistitem.save()
-                    inwatchlist = True
                 else:
                     watchlistitem = Watchlist.objects.get(listing=Listing(id), user=User(request.user.id))
                     watchlistitem.status = True
                     watchlistitem.save()
                 alert_message = "Added listing to watchlist"
+
+                return render(request, "auctions/listing.html", {
+                    "listing": listing,
+                    "highest_bid": highest_bid_amount,
+                    "num_of_bids": num_of_bids,
+                    "comments": comments,
+                    "alert": True,
+                    "alert_type": "success",
+                    "alert_message": alert_message,
+                    "highest_bid_object": highest_bid,
+                    "watchliststatus": True
+                })
             elif request.POST.get("removefromwatchlist"):
                 watchlistitem = Watchlist.objects.get(listing=Listing(id), user=User(request.user.id))
                 watchlistitem.status = False
+                print(watchlistitem.status)
                 watchlistitem.save()
                 inwatchlist = False
                 alert_message = "Removed listing from watchlist."
-                
-            return render(request, "auctions/listing.html", {
-                "inwatchlist": inwatchlist,
-                "listing": listing,
-                "highest_bid": highest_bid_amount,
-                "num_of_bids": num_of_bids,
-                "comments": comments,
-                "alert": True,
-                "alert_type": "success",
-                "alert_message": alert_message,
-                "highest_bid_object": highest_bid
-            })
+                    
+                return render(request, "auctions/listing.html", {
+                    "watchliststatus": watchlistitem.status,
+                    "listing": listing,
+                    "highest_bid": highest_bid_amount,
+                    "num_of_bids": num_of_bids,
+                    "comments": comments,
+                    "alert": True,
+                    "alert_type": "success",
+                    "alert_message": alert_message,
+                    "highest_bid_object": highest_bid,
+                    "watchliststatus": False
+                })
             
         
     else:
@@ -273,7 +299,8 @@ def listing(request, id):
                 "alert": True,
                 "alert_type": "secondary",
                 "alert_message": "This listing is not active anymore",
-                "highest_bid_object": highest_bid
+                "highest_bid_object": highest_bid,
+                "watchliststatus": watchlistitemstatus
             })
             
         return render(request, "auctions/listing.html", {
@@ -281,10 +308,11 @@ def listing(request, id):
             "highest_bid": highest_bid_amount,
             "num_of_bids": num_of_bids,
             "comments": comments,
+            "watchliststatus": watchlistitemstatus
         })
 
 def watchlist(request):
-    watchlist = Watchlist.objects.all()
+    watchlist = Watchlist.objects.filter(status=True)
     return render(request, "auctions/watchlist.html", {
         "watchlist": watchlist
     })

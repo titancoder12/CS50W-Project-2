@@ -17,13 +17,13 @@
     <img src="{{ listing.img_URL }}" alt="image">
 </div>
 <h1>{{ listing.name }}</h1>
-{% if inwatchlist != True %}
+{% if watchliststatus == False  %}
     <form action="{% url 'listing' listing.id %}" method="POST">
         {% csrf_token %}  
         <input class="btn btn-secondary" name="addtowatchlist" type="submit" value="Add to watchlist">
     </form>
 {% endif %}
-{% if inwatchlist %}
+{% if watchliststatus == True %}
     <form action="{% url 'listing' listing.id %}" method="POST">
         {% csrf_token %}  
         <input class="btn btn-secondary" name="removefromwatchlist" type="submit" value="Remove from watchlist">
