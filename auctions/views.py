@@ -228,69 +228,66 @@ def listing(request, id):
                 "highest_bid_object": highest_bid,
                 "watchliststatus": watchlistitemstatus
             })
-        else:
-            if request.POST.get("addtowatchlist"):
-                watchlistitem = Watchlist.objects.filter(listing=Listing(id), user=User(request.user.id))
-                if str(watchlistitem) == "<QuerySet []>":
-                    watchlistitem = Watchlist(listing=Listing(id), user=User(request.user.id))
-                    watchlistitem.save()
-                else:
-                    watchlistitem = Watchlist.objects.get(listing=Listing(id), user=User(request.user.id))
-                    watchlistitem.status = True
-                    watchlistitem.save()
-                alert_message = "Added listing to watchlist"
-
-                return render(request, "auctions/listing.html", {
-                    "listing": listing,
-                    "highest_bid": highest_bid_amount,
-                    "num_of_bids": num_of_bids,
-                    "comments": comments,
-                    "alert": True,
-                    "alert_type": "success",
-                    "alert_message": alert_message,
-                    "highest_bid_object": highest_bid,
-                    "watchliststatus": True
-                })
-            elif request.POST.get("removefromwatchlist"):
-                watchlistitem = Watchlist.objects.get(listing=Listing(id), user=User(request.user.id))
-                watchlistitem.status = False
-                print(watchlistitem.status)
+        elif request.POST.get("addtowatchlist"):
+            watchlistitem = Watchlist.objects.filter(listing=Listing(id), user=User(request.user.id))
+            if str(watchlistitem) == "<QuerySet []>":
+                watchlistitem = Watchlist(listing=Listing(id), user=User(request.user.id))
                 watchlistitem.save()
-                inwatchlist = False
-                alert_message = "Removed listing from watchlist."
+            else:
+                watchlistitem = Watchlist.objects.get(listing=Listing(id), user=User(request.user.id))
+                watchlistitem.status = True
+                watchlistitem.save()
+            alert_message = "Added listing to watchlist"
+
+            return render(request, "auctions/listing.html", {
+                "listing": listing,
+                "highest_bid": highest_bid_amount,
+                "num_of_bids": num_of_bids,
+                "comments": comments,
+                "alert": True,
+                "alert_type": "success",
+                "alert_message": alert_message,
+                "highest_bid_object": highest_bid,
+                "watchliststatus": True
+            })
+        elif request.POST.get("removefromwatchlist"):
+            watchlistitem = Watchlist.objects.get(listing=Listing(id), user=User(request.user.id))
+            watchlistitem.status = False
+            print(watchlistitem.status)
+            watchlistitem.save()
+            alert_message = "Removed listing from watchlist."
                     
-                return render(request, "auctions/listing.html", {
-                    "watchliststatus": watchlistitem.status,
-                    "listing": listing,
-                    "highest_bid": highest_bid_amount,
-                    "num_of_bids": num_of_bids,
-                    "comments": comments,
-                    "alert": True,
-                    "alert_type": "success",
-                    "alert_message": alert_message,
-                    "highest_bid_object": highest_bid,
-                    "watchliststatus": False
-                })
+            return render(request, "auctions/listing.html", {
+                "watchliststatus": watchlistitem.status,
+                "listing": listing,
+                "highest_bid": highest_bid_amount,
+                "num_of_bids": num_of_bids,
+                "comments": comments,
+                "alert": True,
+                "alert_type": "success",
+                "alert_message": alert_message,
+                "highest_bid_object": highest_bid,
+                "watchliststatus": False
+            })
             
         
     else:
+        watchlistitem = Watchlist.objects.filter(listing=Listing(id), user=User(request.user.id))
+        if str(watchlistitem) != "<QuerySet []>":
+            watchlistitem = Watchlist.objects.get(listing=Listing(id), user=User(request.user.id))
+            if watchlistitem.status == True:
+                watchlistitemstatus = True
+            else:
+                watchlistitemstatus = False
+        else:
+            watchlistitemstatus = False
+    
         listing = Listing.objects.get(id=id)
         comments = listing.comments.all()
         #bids = listing.bids.order_by("-amount")
         #num_of_bids = int(bids.count())
         #highest_bid = bids.first()
         if listing.status == False:
-            """if request.user.id == highest_bid.user.id:
-                return render(request, "auctions/listing.html", {
-                    "listing": listing,
-                    "highest_bid": highest_bid_amount,
-                    "num_of_bids": num_of_bids,
-                    "comments": comments,
-                    "alert": True,
-                    "alert_type": "success",
-                    "alert_message": "You won this bid!",
-                    "highest_bid_object": highest_bid
-                })"""
             return render(request, "auctions/listing.html", {
                 "listing": listing,
                 "highest_bid": highest_bid_amount,
@@ -312,7 +309,7 @@ def listing(request, id):
         })
 
 def watchlist(request):
-    watchlist = Watchlist.objects.filter(status=True)
+    watchlist = Watchlist.objects.filter(user=User(request.user.id))
     return render(request, "auctions/watchlist.html", {
         "watchlist": watchlist
     })

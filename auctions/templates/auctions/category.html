@@ -3,7 +3,9 @@
 {% block body %}
 <h2>{{ category.name }}</h2>  
     {% for listing in listings %}
-        <a href="{% url 'listing' listing.id %}">{{ listing.name }}</a>
-        <br>
+        {% if listing.status == True %}
+            <a href="{% url 'listing' listing.id %}">{{ listing.name }}</a>
+            <br>
+        {% endif %}
     {% endfor %}
 {% endblock %}

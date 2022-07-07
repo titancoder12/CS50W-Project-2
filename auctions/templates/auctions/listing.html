@@ -17,18 +17,18 @@
     <img src="{{ listing.img_URL }}" alt="image">
 </div>
 <h1>{{ listing.name }}</h1>
-{% if watchliststatus == False  %}
-    <form action="{% url 'listing' listing.id %}" method="POST">
-        {% csrf_token %}  
-        <input class="btn btn-secondary" name="addtowatchlist" type="submit" value="Add to watchlist">
-    </form>
-{% endif %}
-{% if watchliststatus == True %}
-    <form action="{% url 'listing' listing.id %}" method="POST">
-        {% csrf_token %}  
-        <input class="btn btn-secondary" name="removefromwatchlist" type="submit" value="Remove from watchlist">
-    </form>
-{% endif %}
+    {% if watchliststatus == False  %}
+        <form action="{% url 'listing' listing.id %}" method="POST">
+            {% csrf_token %}  
+            <input class="btn btn-secondary" name="addtowatchlist" {% if user.is_authenticated == False %}disabled{% endif %} type="submit" value="Add to watchlist">
+        </form>
+    {% endif %}
+    {% if watchliststatus == True %}
+        <form action="{% url 'listing' listing.id %}" method="POST">
+            {% csrf_token %}  
+            <input class="btn btn-secondary" name="removefromwatchlist" {% if user.is_authenticated == False %}disabled{% endif %} type="submit" value="Remove from watchlist">
+        </form>
+    {% endif %}
 <br>
 <h2>Discription</h2>
 <p>{{ listing.discription }}</p><br>
@@ -47,7 +47,7 @@
     {% csrf_token %}
     <input class="form-control" autocomplete="off" name="amount" type="number" placeholder="Amount">
     <input type="hidden" name="listing" value="{{ listing.id }}">
-    <input type="submit" name="bid" {% if listing.status == False %}disabled{% endif %} class="btn btn-primary" value="Bid">    
+    <input type="submit" name="bid" {% if listing.status == False or user.is_authenticated == False %}disabled{% endif %} class="btn btn-primary" value="Bid">    
 </form>
 {% if listing.status != False %}
     {% if num_of_bids > 0 %}
@@ -72,6 +72,6 @@
 <form action="{% url 'listing' listing.id %}" method="post">
     {% csrf_token %}
     <input class="form-control" autocomplete="off" name="comment_text" placeholder="Post a new comment">
-    <input type="submit" name="postcomment" class="btn btn-primary" value="Post" placeholder="Create a new comment">
+    <input type="submit" name="postcomment" class="btn btn-primary" {% if user.is_authenticated == False %}disabled{% endif %} value="Post" placeholder="Create a new comment">
 </form>
 {% endblock %}
